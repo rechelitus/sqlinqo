@@ -1,0 +1,363 @@
+@startuml sqlinqo-class-diagram
+title Sqlinqo - Static class diagram
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+hide empty members
+
+package "@sqlinqo/core" as core {
+
+  package "metadata" {
+    interface ColumnDefinition {
+      +type: ColumnType
+      +of?: ArrayElementType
+      +column?: string
+      +primaryKey?: boolean
+      +nullable?: boolean
+      +generated?: boolean
+    }
+    interface ReferenceDefinition {
+      +kind = "reference"
+      +target: () => AnyEntity
+      +from: string
+      +to?: string
+      +optional?: boolean
+    }
+    interface CollectionDefinition {
+      +kind = "collection"
+      +target: () => AnyEntity
+      +from: string
+      +to?: string
+    }
+    interface EntityDefinition {
+      +name: string
+      +table: string
+      +schema?: string
+      +columns: ColumnMap
+      +relations: RelationMap
+      +primaryKey: string[]
+      +filter?: LambdaExpression
+    }
+    class "defineEntity()" as defineEntity <<function>>
+    class "reference() / collection()" as relFactories <<function>>
+  }
+
+  package "context" {
+    interface DbContextOptions {
+      +driver: Driver
+      +dialect: SqlDialect
+      +entities: Record<string, AnyEntity>
+      +logger?(statement: ExecutedStatement)
+    }
+    interface DbContextInternals {
+      +$driver: Driver
+      +$dialect: SqlDialect
+      +$close(): Promise<void>
+    }
+    interface DbContextTransaction {
+      +$transaction<T>(body): Promise<T>
+    }
+    class DbContext <<type>>
+    class "createDbContext()" as createDbContext <<function>>
+  }
+
+  package "driver" {
+    interface Driver {
+      +name: string
+      +execute(statement): Promise<ResultRow[]>
+      +close(): Promise<void>
+      +transaction?<T>(body): Promise<T>
+    }
+    interface PreparedStatement {
+      +text: string
+      +values: unknown[]
+    }
+    interface ExecutedStatement {
+      +durationMs: number
+      +rowCount: number
+    }
+  }
+
+  package "query" {
+    interface QueryRuntime {
+      +dialect: SqlDialect
+      +driver: Driver
+      +logger?(statement)
+    }
+    class "Queryable<T>" as Queryable {
+      #runtime: QueryRuntime
+      #plan: QueryPlan
+      #bags: ParameterBags
+      #scalar: boolean
+      +where() / select() / join() / groupJoin()
+      +selectMany() / groupBy() / orderBy()
+      +skip() / take() / distinct() / union()
+      +update() / delete() / include() / tag()
+      +toSQL(): PreparedStatement
+      +toArray() / first() / single()
+      +count() / sum() / average() / min() / max()
+    }
+    class "OrderedQueryable<T>" as OrderedQueryable {
+      +thenBy() / thenByDescending()
+      +takeWhile() / skipWhile()
+      +takeLast() / skipLast()
+      +after() / before() / zip()
+    }
+    class "EntitySet<TEntity>" as EntitySet {
+      +ignoreQueryFilters()
+      +insert() / insertMany() / insertFrom()
+      +upsert() / upsertMany()
+      +fromSql()
+    }
+    class "IncludedQueryable<T>" as IncludedQueryable {
+      +include() / thenInclude()
+      +asSingleStatement()
+      +toSQL() / toArray() / first() / single()
+    }
+    class "IncludedCollection<TRow>" as IncludedCollection {
+      +where() / orderBy()
+      +orderByDescending()
+    }
+    class "OrderedIncludedCollection<TRow>" as OrderedIncludedCollection {
+      +thenBy() / thenByDescending()
+      +take() / skip()
+    }
+    interface QueryPlan <<union of plan nodes>> {
+      SourceNode | RawSourceNode | WhereNode
+      SelectNode | OrderByNode | JoinNode
+      GroupByNode | SetOperationNode | ...
+    }
+    interface BoundQuery {
+      +plan: QueryPlan
+    }
+    class "renameBags()" as rebind <<function>>
+  }
+
+  package "parser / expression" {
+    class "toExpression()" as toExpression <<function>>
+    class "tokenize()" as lexer <<function>>
+    class "parseLambdaSource()" as parser <<function>>
+    class "bindLambda()" as bind <<function>>
+    interface JsNode <<AST union>>
+    interface LambdaExpression {
+      +parameters: string[]
+      +body: ExpressionNode
+    }
+    interface ExpressionNode <<union>> {
+      Constant | Parameter | External | Member
+      Binary | Unary | Call | Conditional
+      Object | Array | Regex
+    }
+  }
+
+  package "sql" {
+    interface SqlDialect {
+      +name: string
+      +sharesParameters: boolean
+      +quoteIdentifier(id): string
+      +parameterPlaceholder(i): string
+      +concat(parts): SqlExpression
+      +formatPaging(limit, offset): string
+      +formatUnitTable(alias): string
+      +formatReturning(cols): string
+      +formatUpsert(conflict, update): string
+    }
+    abstract class BaseDialect {
+      +sharesParameters: boolean = true
+      {abstract} +name: string
+      {abstract} +quoteIdentifier(id): string
+      {abstract} +parameterPlaceholder(i): string
+    }
+    class Compiler {
+      +compileQuery() / compileInsert()
+      +compileUpdate() / compileDelete()
+      +compileCount() / compileSum() ...
+    }
+    interface SqlSelect
+    interface SqlInsert
+    interface SqlUpdate
+    interface SqlDelete
+    interface SqlExpression <<union>>
+    class Printer {
+      +printSelect() / printInsert()
+      +printUpdate() / printDelete()
+    }
+    interface CompiledStatement {
+      +text: string
+      +parameters: ParameterSource[]
+    }
+    class "bindParameters()" as bindParams <<function>>
+  }
+
+  package "errors" {
+    class LinqError
+    class ParseError
+    class UnsupportedExpressionError
+    class InvalidQueryError
+    class SequenceError
+    class ModelError
+  }
+}
+
+package "@sqlinqo/provider-postgres" as pg {
+  class PostgresDialect
+  class PostgresDriver {
+    -pool: Pool
+  }
+  class PostgresTransaction
+  interface PostgresDriverOptions
+  class "createPostgresContext()" as createPg <<function>>
+}
+
+package "@sqlinqo/provider-mssql" as mssql {
+  class MssqlDialect
+  class MssqlDriver {
+    -pool: ConnectionPool
+  }
+  class MssqlTransactionDriver
+  interface MssqlDriverOptions
+  class "createMssqlContext()" as createMssql <<function>>
+}
+
+package "@sqlinqo/cli" as cli {
+  interface SchemaReader {
+    +read(): Promise<DatabaseSchema>
+  }
+  class PostgresSchemaReader
+  interface DatabaseSchema
+  interface TableInfo
+  interface ColumnInfo
+  interface ForeignKeyInfo
+  class "buildModel()" as buildModel <<function>>
+  interface EntityModel {
+    +schema: string
+    +entities: GeneratedEntity[]
+    +warnings: string[]
+  }
+  interface GeneratedEntity
+  interface GeneratedColumn
+  interface GeneratedRelation <<union>>
+  class "emitFiles()" as emit <<function>>
+  interface GeneratedFile
+  class "scaffold()" as scaffold <<function>>
+  class "mapColumnType()" as mapColumn <<function>>
+}
+
+' ---------- metadata ----------
+EntityDefinition "1" *-- "1..*" ColumnDefinition : columns
+EntityDefinition "1" *-- "0..*" ReferenceDefinition : relations
+EntityDefinition "1" *-- "0..*" CollectionDefinition : relations
+ReferenceDefinition ..> EntityDefinition : target
+CollectionDefinition ..> EntityDefinition : target
+EntityDefinition o-- LambdaExpression : filter
+defineEntity ..> EntityDefinition : creates
+relFactories ..> ReferenceDefinition : creates
+relFactories ..> CollectionDefinition : creates
+
+' ---------- context ----------
+DbContext --|> DbContextInternals
+DbContext --|> DbContextTransaction
+DbContext "1" o-- "0..*" EntitySet : entity sets
+createDbContext ..> DbContextOptions : uses
+createDbContext ..> DbContext : creates
+createDbContext ..> QueryRuntime : builds
+DbContextOptions --> Driver
+DbContextOptions --> SqlDialect
+DbContextOptions ..> EntityDefinition
+
+' ---------- driver ----------
+ExecutedStatement --|> PreparedStatement
+Driver ..> PreparedStatement : execute
+
+' ---------- query ----------
+QueryRuntime --> Driver
+QueryRuntime --> SqlDialect
+Queryable "1" o-- "1" QueryRuntime
+Queryable "1" o-- "1" QueryPlan
+OrderedQueryable --|> Queryable
+EntitySet --|> Queryable
+Queryable ..> IncludedQueryable : include()
+Queryable ..> OrderedQueryable : orderBy()
+IncludedQueryable ..> Queryable
+IncludedQueryable ..> IncludedCollection
+OrderedIncludedCollection --|> IncludedCollection
+EntitySet --> EntityDefinition
+BoundQuery --> QueryPlan
+Queryable ..> BoundQuery : creates
+Queryable ..> rebind
+Queryable ..> toExpression : lambdas
+QueryPlan ..> ExpressionNode
+QueryPlan ..> LambdaExpression
+
+' ---------- parser ----------
+toExpression ..> parser
+toExpression ..> bind
+parser ..> lexer
+parser ..> JsNode : produces
+bind ..> JsNode
+bind ..> LambdaExpression : produces
+LambdaExpression o-- ExpressionNode
+
+' ---------- sql ----------
+BaseDialect ..|> SqlDialect
+Queryable ..> Compiler : compile
+Compiler --> SqlDialect
+Compiler ..> QueryPlan
+Compiler ..> EntityDefinition
+Compiler ..> SqlSelect : produces
+Compiler ..> SqlInsert : produces
+Compiler ..> SqlUpdate : produces
+Compiler ..> SqlDelete : produces
+SqlSelect o-- SqlExpression
+Printer --> SqlDialect
+Printer ..> SqlSelect
+Printer ..> CompiledStatement : produces
+Queryable ..> Printer
+Queryable ..> bindParams
+bindParams ..> CompiledStatement
+bindParams ..> PreparedStatement : produces
+
+' ---------- errors ----------
+ParseError --|> LinqError
+UnsupportedExpressionError --|> LinqError
+InvalidQueryError --|> LinqError
+SequenceError --|> LinqError
+ModelError --|> LinqError
+
+' ---------- providers ----------
+PostgresDialect --|> BaseDialect
+PostgresDriver ..|> Driver
+PostgresTransaction ..|> Driver
+PostgresDriver ..> PostgresTransaction : transaction()
+PostgresDriver --> PostgresDriverOptions
+createPg ..> PostgresDriver
+createPg ..> PostgresDialect
+createPg ..> createDbContext
+
+MssqlDialect --|> BaseDialect
+MssqlDriver ..|> Driver
+MssqlTransactionDriver ..|> Driver
+MssqlDriver ..> MssqlTransactionDriver : transaction()
+MssqlDriver --> MssqlDriverOptions
+createMssql ..> MssqlDriver
+createMssql ..> MssqlDialect
+createMssql ..> createDbContext
+
+' ---------- cli ----------
+PostgresSchemaReader ..|> SchemaReader
+SchemaReader ..> DatabaseSchema
+DatabaseSchema "1" *-- "0..*" TableInfo
+TableInfo "1" *-- "0..*" ColumnInfo
+TableInfo "1" *-- "0..*" ForeignKeyInfo
+buildModel ..> DatabaseSchema
+buildModel ..> EntityModel : produces
+buildModel ..> mapColumn
+EntityModel "1" *-- "0..*" GeneratedEntity
+GeneratedEntity "1" *-- "1..*" GeneratedColumn
+GeneratedEntity "1" *-- "0..*" GeneratedRelation
+emit ..> EntityModel
+emit ..> GeneratedFile : produces
+scaffold ..> SchemaReader
+scaffold ..> buildModel
+scaffold ..> emit
+@enduml

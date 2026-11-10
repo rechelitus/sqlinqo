@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.tsbuild/
+coverage/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.local
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+npm-debug.log*
+pnpm-debug.log*
+
+# Entities written by the CLI round-trip test, rebuilt on every run.
+packages/cli/test/.generated/

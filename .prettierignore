@@ -1,0 +1,6 @@
+dist/
+.tsbuild/
+coverage/
+pnpm-lock.yaml
+CHANGELOG.md
+packages/cli/test/.generated/

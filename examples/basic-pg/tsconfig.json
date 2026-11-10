@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".tsbuild",
+    "tsBuildInfoFile": ".tsbuild/.tsbuildinfo",
+    "noEmit": false,
+    "paths": {
+      "@sqlinqo/core": ["../../packages/core/src/index.ts"],
+      "@sqlinqo/postgres": ["../../packages/provider-postgres/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../../packages/provider-postgres"
+    }
+  ]
+}

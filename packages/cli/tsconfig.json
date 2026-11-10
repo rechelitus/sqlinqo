@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".tsbuild",
+    "tsBuildInfoFile": ".tsbuild/.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  // Written and imported by the round-trip test. It is output, and typechecking
+  // it here would fail the build whenever it has not been generated yet.
+  "exclude": ["test/.generated"],
+  "references": [{ "path": "../core" }]
+}

@@ -1,0 +1,35 @@
+# Databases used by the integration tests. `pnpm test:db:up` starts both.
+#   DATABASE_URL=postgres://sqlinqo:sqlinqo@localhost:5433/sqlinqo pnpm test
+#   MSSQL_DATABASE_URL='Server=localhost,1434;Database=master;User Id=sa;Password=Sqlinqo!Passw0rd;TrustServerCertificate=true' pnpm test
+# Ports 5433 and 1434 avoid clashing with a local PostgreSQL or SQL Server.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sqlinqo
+      POSTGRES_PASSWORD: sqlinqo
+      POSTGRES_DB: sqlinqo
+    ports:
+      - '5433:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sqlinqo -d sqlinqo']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: 'Sqlinqo!Passw0rd'
+    ports:
+      - '1434:1433'
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          '/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20

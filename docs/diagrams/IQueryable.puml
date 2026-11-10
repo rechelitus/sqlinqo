@@ -1,0 +1,36 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+
+interface IEnumerable {
+    +GetEnumerator()
+}
+
+interface "IEnumerable<T>" as IEnumerableT {
+    +GetEnumerator()
+}
+
+interface IQueryable {
+    +ElementType: Type
+    +Expression: Expression
+    +Provider: IQueryProvider
+}
+
+interface "IQueryable<T>" as IQueryableT
+
+interface IQueryProvider {
+    +CreateQuery()
+    +CreateQuery<T>()
+    +Execute()
+    +Execute<T>()
+}
+
+' Inheritance relationships
+IQueryable ..|> IEnumerable
+IEnumerableT ..|> IEnumerable
+IQueryableT ..|> IQueryable
+IQueryableT ..|> IEnumerableT
+
+@enduml

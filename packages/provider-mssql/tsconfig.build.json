@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "declarationMap": false,
+    "noEmit": true,
+    "paths": {
+      "@sqlinqo/core": ["../core/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "references": []
+}

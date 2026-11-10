@@ -1,0 +1,19 @@
+{
+  "name": "@sqlinqo/example-basic-pg",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/main.ts",
+    "typecheck": "tsc --build --pretty"
+  },
+  "dependencies": {
+    "@sqlinqo/core": "workspace:^",
+    "@sqlinqo/postgres": "workspace:^",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

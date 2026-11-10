@@ -1,0 +1,9 @@
+packages:
+  - 'packages/*'
+  - 'examples/*'
+
+# esbuild ships a platform binary through a postinstall script, and both tsup
+# and vitest need it. pnpm blocks lifecycle scripts by default, so it is
+# allow-listed here rather than approved by hand on every clone.
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/provider-postgres" },
+    { "path": "./packages/provider-mssql" },
+    { "path": "./packages/cli" },
+    { "path": "./examples/basic-pg" }
+  ]
+}
